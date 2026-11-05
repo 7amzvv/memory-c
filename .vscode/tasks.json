@@ -55,6 +55,43 @@
                 "cwd": "${workspaceFolder}"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Compiler les tests",
+            "type": "process",
+            "command": "gcc",
+            "args": [
+                "-std=c11",
+                "-Wall",
+                "-Wextra",
+                "-Werror",
+                "-pedantic",
+                "tests/test_memory.c",
+                "-Ilib/raylib/include",
+                "-Llib/raylib/lib",
+                "-lraylib",
+                "-lopengl32",
+                "-lgdi32",
+                "-lwinmm",
+                "-o",
+                "test_memory.exe"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Tester Memory",
+            "type": "process",
+            "command": "${workspaceFolder}/test_memory.exe",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "dependsOn": "Compiler les tests",
+            "problemMatcher": []
         }
     ]
 }
