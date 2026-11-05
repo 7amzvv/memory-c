@@ -13,6 +13,25 @@ int main(void)
     int hauteur_carte = 96;
     int espace_cartes = 16;
     int score = 0;
+    int coups = 0;
+    int paires_trouvees = 0;
+    int valeurs[32] = {0};
+    bool visibles[32] = {false};
+    bool trouvees[32] = {false};
+    int premiere_carte = -1;
+    int deuxieme_carte = -1;
+    float attente = 0.0f;
+
+    Color couleurs[16] = {
+        {220, 65, 65, 255}, {45, 160, 85, 255},
+        {55, 110, 220, 255}, {245, 200, 45, 255},
+        {150, 75, 200, 255}, {245, 135, 40, 255},
+        {235, 110, 170, 255}, {40, 190, 195, 255},
+        {115, 70, 40, 255}, {40, 55, 75, 255},
+        {145, 190, 50, 255}, {130, 35, 70, 255},
+        {175, 145, 110, 255}, {120, 140, 155, 255},
+        {35, 95, 75, 255}, {125, 115, 230, 255}
+    };
 
     Color fond = {246, 247, 250, 255};
     Color panneau = {224, 232, 242, 255};
@@ -30,6 +49,7 @@ int main(void)
     while (!WindowShouldClose()) {
         Vector2 souris = GetMousePosition();
         bool clic = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+        int ancien_ecran = ecran;
 
         if (ecran == 0) {
             if (clic) {
@@ -56,6 +76,91 @@ int main(void)
         } else {
             if (clic && CheckCollisionPointRec(souris, bouton_menu)) {
                 ecran = 0;
+            }
+        }
+
+
+        if (ancien_ecran == 0 && ecran == 1) {
+            score = 0;
+            coups = 0;
+            paires_trouvees = 0;
+            premiere_carte = -1;
+            deuxieme_carte = -1;
+            attente = 0.0f;
+
+            for (int i = 0; i < nombre_cartes; i++) {
+                valeurs[i] = i / 2;
+                visibles[i] = false;
+                trouvees[i] = false;
+            }
+
+            for (int i = nombre_cartes - 1; i > 0; i--) {
+                int hasard = GetRandomValue(0, i);
+                int temporaire = valeurs[i];
+                valeurs[i] = valeurs[hasard];
+                valeurs[hasard] = temporaire;
+            }
+
+            clic = false;
+        }
+
+        int largeur_grille = nombre_colonnes * largeur_carte;
+        largeur_grille = largeur_grille + (nombre_colonnes - 1) * espace_cartes;
+        int hauteur_grille = nombre_lignes * hauteur_carte;
+        hauteur_grille = hauteur_grille + (nombre_lignes - 1) * espace_cartes;
+        int debut_x = (LARGEUR_FENETRE - largeur_grille) / 2;
+        int debut_y = 170 + (440 - hauteur_grille) / 2;
+
+        if (ecran == 1) {
+            if (deuxieme_carte != -1) {
+                attente = attente + GetFrameTime();
+
+                if (attente >= 0.9f) {
+                    visibles[premiere_carte] = false;
+                    visibles[deuxieme_carte] = false;
+                    premiere_carte = -1;
+                    deuxieme_carte = -1;
+                    attente = 0.0f;
+                }
+
+                clic = false;
+            }
+
+            if (clic && deuxieme_carte == -1) {
+                for (int i = 0; i < nombre_cartes; i++) {
+                    int ligne = i / nombre_colonnes;
+                    int colonne = i % nombre_colonnes;
+                    Rectangle zone;
+                    zone.x = (float)(debut_x + colonne * (largeur_carte + espace_cartes));
+                    zone.y = (float)(debut_y + ligne * (hauteur_carte + espace_cartes));
+                    zone.width = (float)largeur_carte;
+                    zone.height = (float)hauteur_carte;
+
+                    if (CheckCollisionPointRec(souris, zone) &&
+                        !visibles[i] && !trouvees[i]) {
+                        visibles[i] = true;
+
+                        if (premiere_carte == -1) {
+                            premiere_carte = i;
+                        } else {
+                            deuxieme_carte = i;
+                            coups = coups + 1;
+
+                            if (valeurs[premiere_carte] == valeurs[deuxieme_carte]) {
+                                trouvees[premiere_carte] = true;
+                                trouvees[deuxieme_carte] = true;
+                                paires_trouvees = paires_trouvees + 1;
+                                score = score + 10;
+                                premiere_carte = -1;
+                                deuxieme_carte = -1;
+                            } else {
+                                attente = 0.0f;
+                            }
+                        }
+
+                        break;
+                    }
+                }
             }
         }
 
@@ -119,14 +224,6 @@ int main(void)
             DrawText("Menu", 820 + (140 - MeasureText("Menu", 22)) / 2,
                      47, 22, DARKGRAY);
 
-            int largeur_grille = nombre_colonnes * largeur_carte;
-            largeur_grille = largeur_grille + (nombre_colonnes - 1) * espace_cartes;
-            int hauteur_grille = nombre_lignes * hauteur_carte;
-            hauteur_grille = hauteur_grille + (nombre_lignes - 1) * espace_cartes;
-
-            int debut_x = (LARGEUR_FENETRE - largeur_grille) / 2;
-            int debut_y = 170 + (440 - hauteur_grille) / 2;
-
             for (int ligne = 0; ligne < nombre_lignes; ligne++) {
                 for (int colonne = 0; colonne < nombre_colonnes; colonne++) {
                     int position_x = debut_x + colonne * (largeur_carte + espace_cartes);
@@ -138,17 +235,31 @@ int main(void)
                     carte.width = (float)largeur_carte;
                     carte.height = (float)hauteur_carte;
 
-                    DrawRectangleRec(carte, couleur_carte);
-                    int texte_x = position_x + (largeur_carte - MeasureText("?", 38)) / 2;
-                    int texte_y = position_y + (hauteur_carte - 38) / 2;
-                    DrawText("?", texte_x, texte_y, 38, RAYWHITE);
+                    int numero = ligne * nombre_colonnes + colonne;
+
+                    if (visibles[numero] || trouvees[numero]) {
+                        DrawRectangleRec(carte, couleurs[valeurs[numero]]);
+
+                        if (trouvees[numero]) {
+                            DrawRectangleLinesEx(carte, 3, accent);
+                        }
+                    } else {
+                        DrawRectangleRec(carte, couleur_carte);
+                        int texte_x = position_x + (largeur_carte - MeasureText("?", 38)) / 2;
+                        int texte_y = position_y + (hauteur_carte - 38) / 2;
+                        DrawText("?", texte_x, texte_y, 38, RAYWHITE);
+                    }
                 }
             }
 
-            const char *texte_score = TextFormat("Score : %d", score);
+            const char *texte_score = TextFormat("Score : %d   Coups : %d", score, coups);
             int largeur_score = MeasureText(texte_score, 26);
             DrawText(texte_score, (LARGEUR_FENETRE - largeur_score) / 2,
                      670, 26, accent);
+            if (paires_trouvees == nombre_cartes / 2) {
+                DrawText("Bravo ! Toutes les paires sont trouvees.", 255, 130, 22, accent);
+            }
+
             DrawText("Hamza Fadli", 40, 730, 16, GRAY);
         }
 
