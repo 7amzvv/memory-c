@@ -42,6 +42,8 @@ int main(void)
     Rectangle bouton_16 = {395, 320, 210, 130};
     Rectangle bouton_32 = {635, 320, 210, 130};
     Rectangle bouton_menu = {820, 35, 140, 45};
+    Rectangle bouton_rejouer = {300, 400, 180, 50};
+    Rectangle bouton_accueil = {520, 400, 180, 50};
 
     InitWindow(LARGEUR_FENETRE, HAUTEUR_FENETRE, "Memory");
     SetTargetFPS(60);
@@ -50,6 +52,7 @@ int main(void)
         Vector2 souris = GetMousePosition();
         bool clic = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
         int ancien_ecran = ecran;
+        bool rejouer = false;
 
         if (ecran == 0) {
             if (clic) {
@@ -74,13 +77,23 @@ int main(void)
                 }
             }
         } else {
-            if (clic && CheckCollisionPointRec(souris, bouton_menu)) {
-                ecran = 0;
+            if (paires_trouvees == nombre_cartes / 2) {
+                if (clic && CheckCollisionPointRec(souris, bouton_rejouer)) {
+                    rejouer = true;
+                } else if (clic && CheckCollisionPointRec(souris, bouton_accueil)) {
+                    ecran = 0;
+                }
+
+                clic = false;
+            } else {
+                if (clic && CheckCollisionPointRec(souris, bouton_menu)) {
+                    ecran = 0;
+                }
             }
         }
 
 
-        if (ancien_ecran == 0 && ecran == 1) {
+        if ((ancien_ecran == 0 && ecran == 1) || rejouer) {
             score = 0;
             coups = 0;
             paires_trouvees = 0;
@@ -126,7 +139,7 @@ int main(void)
                 clic = false;
             }
 
-            if (clic && deuxieme_carte == -1) {
+            if (clic && deuxieme_carte == -1 && paires_trouvees < nombre_cartes / 2) {
                 for (int i = 0; i < nombre_cartes; i++) {
                     int ligne = i / nombre_colonnes;
                     int colonne = i % nombre_colonnes;
@@ -256,11 +269,44 @@ int main(void)
             int largeur_score = MeasureText(texte_score, 26);
             DrawText(texte_score, (LARGEUR_FENETRE - largeur_score) / 2,
                      670, 26, accent);
-            if (paires_trouvees == nombre_cartes / 2) {
-                DrawText("Bravo ! Toutes les paires sont trouvees.", 255, 130, 22, accent);
-            }
-
             DrawText("Hamza Fadli", 40, 730, 16, GRAY);
+
+            if (paires_trouvees == nombre_cartes / 2) {
+                Rectangle voile = {0, 0, LARGEUR_FENETRE, HAUTEUR_FENETRE};
+                DrawRectangleRec(voile, (Color){30, 40, 55, 150});
+
+                Rectangle fenetre_fin = {250, 230, 500, 270};
+                DrawRectangleRec(fenetre_fin, fond);
+                DrawRectangleLinesEx(fenetre_fin, 2, accent);
+
+                const char *titre_fin = "Bravo ! Partie terminee";
+                int largeur_titre_fin = MeasureText(titre_fin, 28);
+                DrawText(titre_fin, (LARGEUR_FENETRE - largeur_titre_fin) / 2,
+                         260, 28, accent);
+
+                const char *resultat = TextFormat("%d points - %d coups", score, coups);
+                int largeur_resultat = MeasureText(resultat, 24);
+                DrawText(resultat, (LARGEUR_FENETRE - largeur_resultat) / 2,
+                         310, 24, DARKGRAY);
+                DrawText("Que veux-tu faire ?", 380, 355, 22, DARKGRAY);
+
+                Color couleur_rejouer = panneau;
+                Color couleur_accueil = panneau;
+
+                if (CheckCollisionPointRec(souris, bouton_rejouer)) {
+                    couleur_rejouer = (Color){198, 216, 237, 255};
+                }
+                if (CheckCollisionPointRec(souris, bouton_accueil)) {
+                    couleur_accueil = (Color){198, 216, 237, 255};
+                }
+
+                DrawRectangleRec(bouton_rejouer, couleur_rejouer);
+                DrawRectangleRec(bouton_accueil, couleur_accueil);
+                DrawText("Rejouer", 300 + (180 - MeasureText("Rejouer", 22)) / 2,
+                         414, 22, accent);
+                DrawText("Accueil", 520 + (180 - MeasureText("Accueil", 22)) / 2,
+                         414, 22, accent);
+            }
         }
 
         EndDrawing();
