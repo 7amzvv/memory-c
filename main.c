@@ -30,12 +30,14 @@
 #define TAILLE_QUESTION 38
 #define TAILLE_SCORE 26
 
+/* Les trois ecrans du jeu. */
 typedef enum {
     ACCUEIL,
     PARTIE,
     FIN_PARTIE
 } Ecran;
 
+/* Les donnees d'une partie sont regroupees dans cette structure. */
 typedef struct {
     int nombre_cartes;
     int nombre_colonnes;
@@ -91,6 +93,7 @@ bool NombreCartesValide(int nombre_cartes)
     return false;
 }
 
+/* Remet la partie a zero et prepare deux cartes par couleur. */
 bool InitialiserPartie(Partie *partie, int nombre_cartes)
 {
     if (partie == NULL || !NombreCartesValide(nombre_cartes)) {
@@ -113,6 +116,7 @@ bool InitialiserPartie(Partie *partie, int nombre_cartes)
         partie->valeurs[i] = i / 2;
     }
 
+    /* Melange de Fisher-Yates. */
     for (int i = nombre_cartes - 1; i > 0; i--) {
         int hasard = GetRandomValue(0, i);
         int temporaire = partie->valeurs[i];
@@ -129,6 +133,7 @@ bool PartieTerminee(const Partie *partie)
            partie->paires_trouvees == partie->nombre_cartes / 2;
 }
 
+/* Ignore les clics invalides et compare les deux cartes choisies. */
 bool RetournerCarte(Partie *partie, int numero)
 {
     if (numero < 0 || numero >= partie->nombre_cartes ||
@@ -164,6 +169,7 @@ bool RetournerCarte(Partie *partie, int numero)
     return true;
 }
 
+/* Laisse les cartes differentes visibles avant de les cacher. */
 void MettreAJourPartie(Partie *partie, float temps_ecoule)
 {
     if (partie->deuxieme_carte == AUCUNE_CARTE || temps_ecoule <= 0.0f) {
@@ -218,6 +224,7 @@ int CarteSousSouris(const Partie *partie, Vector2 souris)
     return AUCUNE_CARTE;
 }
 
+/* Fonctions d'affichage partagees par les ecrans. */
 void DessinerTexteCentre(const char *texte, Rectangle zone, int taille, Color couleur)
 {
     int x = (int)(zone.x + (zone.width - MeasureText(texte, taille)) / 2);
@@ -343,6 +350,7 @@ int main(void)
     InitWindow(LARGEUR_FENETRE, HAUTEUR_FENETRE, "Memory");
     SetTargetFPS(IMAGES_PAR_SECONDE);
 
+    /* Traite les entrees, met a jour la partie puis dessine l'ecran. */
     while (!WindowShouldClose()) {
         Vector2 souris = GetMousePosition();
         bool clic = IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
